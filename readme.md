@@ -4,7 +4,7 @@
 
 ## 1. Objetivo
 
-Desenvolver um simulador de escalonamento de processos e comparar o comportamento dos algoritmos estudados em aula. O trabalho deve demonstrar como a escolha do próximo processo afeta o tempo de espera, o tempo de resposta e o turnaround.
+Desenvolver um simulador de escalonamento de processos e comparar o comportamento dos algoritmos estudados em aula. O trabalho deve demonstrar como a escolha do próximo processo afeta o tempo de espera, o tempo de resposta e o turnaround, comparando os dois algoritmos atribuídos à dupla.
 
 A atividade consiste em uma simulação. Não é necessário criar processos reais, utilizar threads ou modificar o escalonador do sistema operacional.
 
@@ -21,7 +21,22 @@ Serão utilizados somente os algoritmos apresentados em aula:
 | `MLFQ` | Filas multinível com realimentação | Utiliza filas de prioridades e altera a posição dos processos conforme sua execução. |
 | `CFS` | Completely Fair Scheduler | Busca distribuir a CPU de forma justa utilizando o tempo virtual de execução. |
 
-Cada dupla deverá implementar **FCFS e um segundo algoritmo**, escolhido em acordo com o professor. As opções para o segundo algoritmo são SJF, SRTF, RR, MLFQ e CFS.
+Cada dupla deverá implementar **os dois algoritmos atribuídos pelo professor**, utilizando a mesma interface de entrada e saída e executando ambos sobre os mesmos conjuntos de processos.
+
+### Distribuição dos algoritmos entre as duplas
+
+A distribuição abaixo prevê seis duplas (aproximadamente 12 estudantes):
+
+| Dupla | Algoritmo 1 | Algoritmo 2 |
+|---|---|---|
+| 1 | FCFS | CFS |
+| 2 | SJF | MLFQ |
+| 3 | SRTF | RR |
+| 4 | FCFS | MLFQ |
+| 5 | SJF | SRTF |
+| 6 | RR | CFS |
+
+Assim, **cada algoritmo será implementado por duas duplas**, sem repetição de pares. O professor poderá ajustar essa distribuição conforme a composição final da turma.
 
 Para MLFQ e CFS, deverão ser utilizadas as versões didáticas definidas neste enunciado. A versão de CFS não pretende reproduzir todos os detalhes de uma implementação de kernel.
 
@@ -85,14 +100,14 @@ Utilizar três filas, numeradas de 0 a 2, com prioridade decrescente e quanta de
 - Novos processos entram no final da fila 0.
 - Sempre executar a fila de maior prioridade que não esteja vazia.
 - Dentro de cada fila, utilizar Round Robin.
-- O processo que consumir o quantum completo sem concluir desce uma fila.
+- O processo que consumir integralmente seu quantum sem concluir desce uma fila (se ainda não estiver na última).
 - Na fila 2, permanece na mesma fila e retorna ao final ao esgotar seu quantum.
 - Uma chegada na fila 0 interrompe um processo que esteja executando em uma fila inferior.
 - Nesse caso, o processo interrompido permanece na frente de sua fila e conserva o saldo do quantum. A interrupção não reinicia sua cota.
 - Uma chegada à mesma fila não interrompe o processo atual.
 - A cada `boost` unidades, nos instantes positivos múltiplos desse valor, mover todos os processos prontos, incluindo o atual, para a fila 0 e reiniciar suas cotas.
 - No boost, ordenar os processos pelo instante de chegada e pelo ID.
-- Se boost, chegada e fim de quantum coincidirem, processar a conclusão, admitir as chegadas e aplicar o boost. O boost prevalece sobre o rebaixamento.
+- Se boost, chegada e fim de quantum coincidirem, processar eventual conclusão, admitir as chegadas e aplicar o boost. O boost prevalece sobre o rebaixamento. Fora de um instante de boost, o esgotamento do quantum provoca o rebaixamento normal, mesmo que uma nova chegada ocorra exatamente nesse instante.
 
 Exemplo de configuração: quanta `[2, 4, 8]` e boost a cada 20 unidades.
 
@@ -112,7 +127,7 @@ vruntime = vruntime + 1024 / peso
 - Ao admitir novos processos, inicializar seus contadores com o menor `vruntime` entre os processos já presentes, incluindo o atual. Se não houver nenhum, utilizar o último valor de referência registrado; inicialmente, zero.
 - Ao fim de cada unidade, atualizar o valor de referência para o menor `vruntime` entre os processos ainda presentes. Se nenhum permanecer, conservar o `vruntime` do último processo concluído.
 - Admitir todas as chegadas de um mesmo instante com o mesmo valor inicial.
-- Em empate de `vruntime`, escolher quem executou há mais tempo. Processos que nunca executaram têm preferência; persistindo o empate, aplicar chegada e ID.
+- Em empate de `vruntime`, entre os processos prontos e ainda não concluídos, escolher quem está há mais tempo sem executar. Processos que nunca executaram têm preferência; persistindo o empate, aplicar chegada e ID.
 - Comparar contadores com tolerância numérica de `1e-9`.
 
 Não é obrigatório implementar árvore rubro-negra. Uma lista ou outra estrutura pode ser usada, desde que a escolha respeite as regras. O README deve explicar a estrutura escolhida e as simplificações desse modelo.
@@ -160,9 +175,9 @@ Outras linguagens devem oferecer uma execução equivalente, documentada no READ
 | `cpu` | Inteiro estritamente positivo. |
 | `peso` | Inteiro positivo, utilizado pelo CFS; se omitido, assumir 1024. |
 
-Para RR, exigir `{"quantum": 2}` ou outro inteiro positivo. Para MLFQ, exigir uma configuração como `{"quantuns": [2, 4, 8], "boost": 20}`, com três quanta inteiros positivos em ordem não decrescente e boost inteiro positivo.
+Para RR, exigir `{"quantum": 2}` ou outro inteiro positivo. Para MLFQ, exigir uma configuração como `{"quantuns": [2, 4, 8], "boost": 20}`, com três quanta inteiros positivos em ordem não decrescente e boost inteiro positivo. Para FCFS, SJF, SRTF e CFS, usar `"configuracao": {}`. Cada execução simula **um único algoritmo**; para compará-los, executar o programa duas vezes, alterando o campo `algoritmo`.
 
-A ordem dos processos no arquivo não deve substituir as regras de chegada e desempate. Campos conhecidos, mas não utilizados pelo algoritmo, como `peso` fora do CFS, devem ser ignorados.
+A ordem dos processos no arquivo não deve substituir as regras de chegada e desempate. Campos conhecidos, mas não utilizados pelo algoritmo, como `peso` fora do CFS, devem ser ignorados. Parâmetros de `configuracao` que pertençam a outro algoritmo também devem ser ignorados; os parâmetros exigidos pelo algoritmo selecionado continuam obrigatórios.
 
 ### 5.2. Saída
 
@@ -203,7 +218,7 @@ A saída deve conter o algoritmo, a linha do tempo, as métricas individuais e a
 
 - Registrar intervalos ociosos com `"processo": "OCIOSO"`, incluindo o intervalo inicial quando a primeira chegada ocorrer depois de zero.
 - Os intervalos devem cobrir a simulação inteira, sem sobreposições nem lacunas, e ter duração positiva.
-- Unir intervalos adjacentes do mesmo processo. Essa normalização também se aplica quando o processo recebe quanta consecutivos sem outro processo executar entre eles.
+- Unir intervalos adjacentes do mesmo processo. Essa normalização também se aplica quando o processo recebe quanta consecutivos sem outro processo executar entre eles. **A união vale apenas para a apresentação da linha do tempo:** eventos de escalonamento, consumo de quantum, boost e atualizações internas continuam ocorrendo normalmente.
 - Ordenar as métricas individuais pelo ID.
 - Emitir números JSON, não strings com unidades. Preservar precisão das médias; a correção aceitará diferença absoluta de até `1e-6`.
 - Não imprimir menus, mensagens de depuração ou diagramas na saída padrão. Mensagens auxiliares podem ir para a saída de erro.
@@ -235,14 +250,14 @@ A fórmula de espera acima vale para o modelo deste trabalho, sem E/S e com cust
 
 ### Experimento 1: conjunto comum
 
-Executar FCFS e o segundo algoritmo sobre os processos da entrada da seção 5.1. Alterar apenas o algoritmo e sua configuração. Para RR, usar quantum 2; para MLFQ, quanta `[2, 4, 8]` e boost 20; para CFS, pesos iguais a 1024.
+Executar **os dois algoritmos atribuídos à dupla** sobre os processos da entrada da seção 5.1. Alterar apenas o algoritmo e sua configuração. Para RR, usar quantum 2; para MLFQ, quanta `[2, 4, 8]` e boost 20; para CFS, pesos iguais a 1024.
 
 Apresentar, para cada algoritmo:
 
 1. Diagrama de Gantt, desenhado ou gerado a partir da linha do tempo.
 2. Tabela de métricas por processo e respectivas médias.
 3. Explicação das decisões de escalonamento, incluindo preempções quando existirem.
-4. Comparação com FCFS: quais métricas melhoraram ou pioraram nesse conjunto?
+4. Comparação entre os dois algoritmos: quais métricas melhoraram ou pioraram nesse conjunto?
 
 ### Experimento 2: casos elaborados pela dupla
 
@@ -254,7 +269,7 @@ Criar pelo menos três entradas adicionais e justificar o objetivo de cada uma:
 
 Conferir manualmente pelo menos um desses casos. Todos devem ser executados nos dois algoritmos implementados.
 
-### Experimento 3: característica do segundo algoritmo
+### Experimento 3: características dos algoritmos atribuídos
 
 | Algoritmo | Análise solicitada |
 |---|---|
@@ -264,19 +279,19 @@ Conferir manualmente pelo menos um desses casos. Todos devem ser executados nos 
 | MLFQ | Mostrar um rebaixamento, uma interrupção por prioridade e um boost. Usar processos longos o suficiente para que os três eventos ocorram. |
 | CFS | Comparar pesos iguais e diferentes. Criar um intervalo em que dois processos longos estejam prontos simultaneamente e comparar o tempo de CPU recebido nesse intervalo. |
 
-No CFS, não comparar apenas o tempo total de CPU recebido até todos terminarem: esse total é fixado pela entrada. Comparar a distribuição durante a disputa pela CPU. Nos demais algoritmos, evitar afirmar que um resultado obtido em um único conjunto prova superioridade em qualquer situação.
+Cada dupla deve realizar as análises específicas **dos dois algoritmos atribuídos**, conforme a tabela. No CFS, não comparar apenas o tempo total de CPU recebido até todos terminarem: esse total é fixado pela entrada. Comparar a distribuição durante a disputa pela CPU. Nos demais algoritmos, evitar afirmar que um resultado obtido em um único conjunto prova superioridade em qualquer situação.
 
 ## 8. Entrega
 
 Entregar o código-fonte e os seguintes materiais:
 
-- `README.md` com identificação da dupla, algoritmos implementados, requisitos, instruções de execução e estruturas de dados utilizadas.
+- `README.md` próprio com identificação da dupla, os dois algoritmos implementados, requisitos, instruções de execução e estruturas de dados utilizadas.
 - Arquivos JSON de entrada e de saída dos experimentos.
 - Relatório curto com diagramas de Gantt, métricas, conferência manual e respostas da seção 7.
 
 O código deve organizar separadamente, sempre que possível, a leitura e validação, a política de escalonamento e o cálculo das métricas. O arquivo de entrada não deve exigir alterações no código para ser utilizado.
 
-Na demonstração, a dupla deverá executar uma entrada fornecida pelo professor e explicar uma decisão do algoritmo e um cálculo de métrica. Ambos os integrantes devem compreender a implementação.
+Na demonstração, a dupla deverá executar uma entrada fornecida pelo professor em ambos os algoritmos e explicar uma decisão de escalonamento e um cálculo de métrica. Ambos os integrantes devem compreender a implementação.
 
 ## 9. Critérios de avaliação
 
